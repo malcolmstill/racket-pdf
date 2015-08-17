@@ -87,6 +87,11 @@ Racket strings to the appropriate bytes?
                     (any->bytes current-object) line-feed
                     #"endobj" line-feed))))
 
+(define (indirect-object object-number generation-number object)
+  (new indirect-object% [object-number object-number]
+       [generation-number generation-number]
+       [object object]))
+
 (define indirect-reference%
   (class* object% (pdf-object-interface)
     (init object-number generation-number)
@@ -98,6 +103,10 @@ Racket strings to the appropriate bytes?
                     #" "
                     (number->bytes current-generation-number)
                     #" R"))))
+
+(define (indirect-reference object-number generation-number)
+  (new indirect-reference% [object-number object-number]
+       [generation-number generation-number]))
 
 (define dictionary%
   (class* object% (pdf-object-interface)
