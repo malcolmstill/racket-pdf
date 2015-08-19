@@ -1,140 +1,83 @@
-#lang racket
+#lang typed/racket
 
 (require racket/string
-         racket/list
-         "utils.rkt")
+         racket/list)
 
 (provide (all-defined-out))
 
-(define line-feed (bytes 10))
+(struct PDFNull ())
 
-(define-syntax (define-bytes stx)
-  (syntax-case stx ()
-    [(_ (name args ... . else) entries ...)
-     #'(define (name args ... . else)
-         (bytes-append entries ...))]))
-
-(define (number->bytes number)
-  (string->bytes/utf-8 (number->string number)))
-
-(define (string->bytes str)
-  (bytes-append #"(" (string->bytes/utf-8 str) #")"))
-
-(define pdf-object-interface (interface () ->bytes))
-
-(define (any->bytes x)
-  (cond
-    [(number? x) (number->bytes x)]
-    [(string? x) (string->bytes x)]
-    [(bytes? x) x]
-    [(object? x) (send x ->bytes)]))
-
-(define name-object%
-  (class* object% (pdf-object-interface)
-    (init name)
-    (define current-name name)
-    (super-new)
-    (define/public (->bytes)
-      (define (process-name-string s)
-        (string-replace s "#" "#23"))
-      (bytes-append #"/" (string->bytes/utf-8 (process-name-string current-name))))))
-
-(define (name-object str)
-  (when (not (string? str))
-    (error 'name-object "name must be string"))
-  (new name-object% [name str]))
+(define-type Array (Listof PDFObject)) ; not a Racket array
 
 #|
-Do we need a literal-string-object or just convert
-Racket strings to the appropriate bytes?
+Maybe we should use a Racket hash for dictionary but I don't think this would allow us to
+define types for specific dictionaries.
 |#
-(define literal-string-object%
-  (class* object% (pdf-object-interface)
-    (init string)
-    (define current-string string)
-    (super-new)
-    (define/public (->bytes)
-      (bytes-append #"(" (string->bytes/utf-8 current-string) #")"))))
+(define-type Dictionary (Listof (Pairof Symbol PDFObject)))
+(define-predicate Dictionary? Dictionary)
 
-(define number-object%
-  (class* object% (pdf-object-interface)
-    (init number)
-    (define current-number number)
-    (super-new)
-    (define/public (->bytes)
-     (number->bytes current-number))))
+#|
+We're going to be defining a lot of dictionaries so let's introduce some syntax to help
 
-(define array-object%
-  (class* object% (pdf-object-interface)
-    (init array)
-    (define current-array array)
-    (super-new)
-    (define/public (->bytes)
-      (bytes-append (apply bytes-append #"[" (map any->bytes current-array) #"]")))))
+Apparently we can't use macros to expand in define-type,
+see https://unknownparallel.wordpress.com/2012/11/05/my-experience-with-typed-racket/
 
-(define indirect-object%
-  (class* object% (pdf-object-interface)
-    (init object-number generation-number object)
-    (define current-object-number object-number)
-    (define current-generation-number generation-number)
-    (define current-object object)
-    (super-new)
-    (define/public (->bytes)
-      (bytes-append (number->bytes current-object-number)
-                    #" "
-                    (number->bytes current-generation-number)
-                    #" obj" line-feed
-                    (any->bytes current-object) line-feed
-                    #"endobj" line-feed))))
+(define-syntax (Dictionaryof stx)
+  (syntax-case stx ()
+    [(_ pairs ...)
+     (with-syntax ([(paired ...) (map (λ (pair)
+                                        (let ([name (car pair)]
+                                              [obj (cdr pair)])
+                                         #'(Pairof #,name #,obj)))
+                                      (reverse (foldl
+                                                (λ (e a)
+                                                  (if (or (null? a) (pair? (car a)))
+                                                      (cons e a)
+                                                      (cons (cons(car a) e) (cdr a)))) '() #'(pairs ...))))])
+     #'(List paired ...))]))
 
-(define (indirect-object object-number generation-number object)
-  (new indirect-object% [object-number object-number]
-       [generation-number generation-number]
-       [object object]))
+|#
 
-(define indirect-reference%
-  (class* object% (pdf-object-interface)
-    (init object-number generation-number)
-    (define current-object-number object-number)
-    (define current-generation-number generation-number)
-    (super-new)
-    (define/public (->bytes)
-      (bytes-append (number->bytes current-object-number)
-                    #" "
-                    (number->bytes current-generation-number)
-                    #" R"))))
+(define-syntax (dictionary stx)
+  (syntax-case stx ()
+    [(_ pairs ...)
+     (with-syntax ([(paired ...)
+                    (map (λ (pair)
+                           (let ([name (car pair)]
+                                 [obj (cdr pair)])
+                             #`(cons #,name #,obj)))
+                         (reverse (foldl
+                                   (λ (e a)
+                                     (if (or (null? a) (pair? (car a)))
+                                         (cons e a)
+                                         (cons (cons(car a) e) (cdr a)))) '() (syntax->list #'(pairs ...)))))])
+     #'(list paired ...))]))
 
-(define (indirect-reference object-number generation-number)
-  (new indirect-reference% [object-number object-number]
-       [generation-number generation-number]))
 
-(define dictionary%
-  (class* object% (pdf-object-interface)
-    (init items)
-    (define current-items items)
-    (super-new)
-    (define/public (->bytes)
-      (bytes-append
-       (apply bytes-append
-              #"<< "
-              (add-between
-               (map (λ (p)
-                      (bytes-append (any->bytes (car p))
-                                    #" "
-                                    (any->bytes (cdr p))))
-                    current-items)
-               line-feed))
-       #" >>" line-feed))))
+(struct IndirectObject ([obj-num : Positive-Integer]
+                        [gen-num : Positive-Integer]
+                        [object : PDFObject]))
 
-(define (dictionary . items)
-  (when (or (zero? (length items)) (odd? (length items)))
-    (error 'dictionary-object
-           "failed because number of entries must be non-zero and even"))
-  (new dictionary% [items (map (λ (x)
-                                 (match x
-                                   [(cons name obj) (cons (name-object name) obj)]))
-                               (filter cdr (pair-off items)))]))
-  
+#|
+Might be useful at some future point to parameterise IndirectReference
+on the type of reference?
+|#
+(struct IndirectReference ([obj-num : Positive-Integer]
+                           [gen-num : Positive-Integer]))
+
+(define-type PDFObject (U Symbol ; Let's represent PDF name objectes with symbols
+                          String ; Likewise we'll represent PDF string objects with Racket's strings
+                          PDFNull ; Don't think we can use Racket's null (the empty list)...let's make our own
+                          Boolean 
+                          ;HexString
+                          Number
+                          Array ; PDF arrays
+                          Dictionary
+                          IndirectObject
+                          IndirectReference
+                          ))
+
+#|
 (define stream%
   (class* object% (pdf-object-interface)
     (init dict stream)
@@ -167,3 +110,4 @@ Racket strings to the appropriate bytes?
               "FDecodeParms" f-decode-parms
               "DL" dl)]
        [stream bytes]))
+|#
