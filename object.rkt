@@ -63,7 +63,7 @@ Might be useful at some future point to parameterise IndirectReference
 on the type of reference?
 |#
 (struct IndirectReference ([obj-num : Positive-Integer]
-                           [gen-num : Positive-Integer]))
+                           [gen-num : Nonnegative-Integer]))
 
 (define-type PDFObject (U Symbol ; Let's represent PDF name objectes with symbols
                           String ; Likewise we'll represent PDF string objects with Racket's strings
@@ -73,41 +73,52 @@ on the type of reference?
                           Number
                           Array ; PDF arrays
                           Dictionary
+                          Stream
                           IndirectObject
                           IndirectReference
                           ))
 
-#|
-(define stream%
-  (class* object% (pdf-object-interface)
-    (init dict stream)
-    (define current-dict dict)
-    (define current-stream stream)
-    (super-new)
+(struct Stream ([dict : Dictionary] [data : Bytes]))
 
-    (define/public (->bytes)
-      (bytes-append
-       (send current-dict ->bytes)
-       #"stream" line-feed
-       current-stream line-feed
-       #"endstream" line-feed))))
+(define-type StreamDictionary (U (List
+                                  (Pairof 'Length Nonnegative-Integer)
+                                  (Pairof 'Filter (U Symbol Array PDFNull))
+                                  (Pairof 'DecodeParms (U Dictionary Array PDFNull))
+                                  (Pairof 'DL (U Nonnegative-Integer PDFNull)))
+                                 (List
+                                  (Pairof 'Length Nonnegative-Integer)
+                                  (Pairof 'F String)
+                                  (Pairof 'FFilter (U Symbol Array PDFNull))
+                                  (Pairof 'FDecodeParms (U Dictionary Array PDFNull))
+                                  (Pairof 'DL (U Nonnegative-Integer PDFNull)))))
 
-(define (stream-object length
-		       #:filter [filter #f]
-		       #:decode-parms [decode-parms #f]
-		       #:f [f #f]
-		       #:f-filter [f-filter #f]
-		       #:f-decode-parms [f-decode-parms #f]
-		       #:dl [dl #f]
-		       bytes)
-  (new stream%
-       [dict (dictionary
-              "Length" length
-              "Filter" (name-object filter)
-              "DecodeParms" decode-parms
-              "F" f
-              "FFilter" f-filter
-              "FDecodeParms" f-decode-parms
-              "DL" dl)]
-       [stream bytes]))
-|#
+(: stream (->* (Bytes) (#:filter (U Symbol Array)
+                                 #:decode-parms (U Dictionary Array)
+                                 #:dl Nonnegative-Integer) Stream))
+(define (stream #:filter [filter (PDFNull)]
+                #:decode-parms [decode-parms (PDFNull)]
+                #:dl [dl (PDFNull)]
+                bytes)
+  (Stream
+   (dictionary
+    'Length (bytes-length bytes)
+    'Filter filter
+    'DecodeParms decode-parms
+    'DL dl)
+   bytes))
+
+(: file-stream (->* (String) (#:filter (U Symbol Array)
+                                      #:decode-parms (U Dictionary Array)
+                                      #:dl Nonnegative-Integer) Stream))
+(define (file-stream f
+                     #:filter [filter (PDFNull)]
+                     #:decode-parms [decode-parms (PDFNull)]
+                     #:dl [dl (PDFNull)])
+  (Stream
+   (dictionary
+    'Length 0
+    'F f
+    'FFilter filter
+    'FDecodeParms decode-parms
+    'DL dl)
+   #""))

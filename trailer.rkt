@@ -2,41 +2,38 @@
 
 (require "object.rkt")
 
+(provide (all-defined-out))
+
 #|
 
 |#
 
-(define trailer%
-  (class* object% (pdf-object-interface)
-    (init dict byte-offset)
-    (define current-dict dict)
-    (define current-byte-offset byte-offset)
-    (super-new)
-
-    (define/public (->bytes)
-      (bytes-append
-       #"trailer" line-feed
-       (send current-dict ->bytes) line-feed
-       #"startxref" line-feed
-       (number->bytes current-byte-offset) line-feed
-       #"%%EOF"))))
+(struct Trailer ([dict : Dictionary] [offset : Integer]))
+(define-type TrailerDictionary (List
+                                (Pairof 'Size Integer)
+                                (Pairof 'Prev (U Integer PDFNull))
+                                (Pairof 'Root IndirectReference)
+                                (Pairof 'Encrypt (U Dictionary PDFNull))
+                                (Pairof 'Info (U Dictionary PDFNull))
+                                (Pairof 'ID Array)))
        
-
+(: trailer (->* (Integer IndirectReference Integer)
+                (#:prev Integer
+                        #:encrypt Dictionary
+                        #:info Dictionary
+                        #:id Array) Trailer))
 (define (trailer size
                  root
-                 #:prev [prev #f]
-                 #:encrypt [encrypt #f]
-                 #:info [info #f]
-                 #:id [id #f]
+                 #:prev [prev (PDFNull)]
+                 #:encrypt [encrypt (PDFNull)]
+                 #:info [info (PDFNull)]
+                 #:id [id (PDFNull)]
                  offset)
-  (when (not (is-a? root indirect-reference%))
-    (error 'trailer "root must be an idirect object"))
-  (new trailer%
-       [dict (dictionary
-              "Size" size
-              "Prev" prev
-              "Root" root
-              "Encrypt" encrypt
-              "Info" info
-              "ID" id)]
-       [byte-offset offset]))
+  (Trailer (dictionary
+            'Size size
+            'Prev prev
+            'Root root
+            'Encrypt encrypt
+            'Info info
+            'ID id)
+           offset))

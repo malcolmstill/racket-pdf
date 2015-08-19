@@ -1,6 +1,7 @@
 #lang typed/racket
 
 (require "object.rkt"
+         "trailer.rkt"
          typed/rackunit)
 
 (provide ->bytes)
@@ -62,6 +63,14 @@ of PDF objects.
                    (->bytes gen-num)
                    #" R")]))
 
+(: stream->bytes : Stream -> Bytes)
+(define (stream->bytes stream)
+  (bytes-append
+   (dictionary->bytes (Stream-dict stream))
+   #"stream" line-feed
+   (Stream-data stream) line-feed
+   #"endstream" line-feed))
+
 (: ->bytes (PDFObject -> Bytes))
 (define (->bytes obj)
   (cond
@@ -74,8 +83,19 @@ of PDF objects.
     [(list? obj) (array->bytes obj)]
     [(IndirectObject? obj) (indirect-object->bytes obj)]
     [(IndirectReference? obj) (indirect-reference->bytes obj)]
+    [(Stream? obj) (stream->bytes obj)]
+    ;[(Trailer? obj) (trailer->bytes obj)]
     [(false? obj) #"false"]
     [#t #"true"]))
+
+(: trailer->bytes : Trailer -> Bytes)
+(define (trailer->bytes trailer)
+  (bytes-append
+   #"trailer" line-feed
+   (dictionary->bytes (Trailer-dict trailer))
+   #"startxref" line-feed
+   (number->bytes (Trailer-offset trailer)) line-feed
+   #"%%EOF"))
 
 (module+ test
   (check-equal? (->bytes 'Name1) #"/Name1")

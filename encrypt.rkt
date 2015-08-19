@@ -18,4 +18,4 @@
    'CF cf
    'StmF stmf
    'StrF strf
-   EFF eff))
+   'EFF eff))

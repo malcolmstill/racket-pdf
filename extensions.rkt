@@ -5,11 +5,11 @@
 
 (provide (all-defined-out))
 
-(define-type Extensions (List (Pairof 'Type 'DeveloperExtensions)
-                              (Pairof 'BaseVersion Version)
-                              (Pairof 'ExtensionLevel Integer)))
+(define-type ExtensionsDictionary (List (Pairof 'Type 'DeveloperExtensions)
+                                        (Pairof 'BaseVersion Version)
+                                        (Pairof 'ExtensionLevel Integer)))
 
-(: extensions : Version Integer -> Extensions)
+(: extensions : Version Integer -> ExtensionsDictionary)
 (define (extensions version level)
   (dictionary
    'Type 'DeveloperExtensions

@@ -1,3 +1,3 @@
-racket-pdftemp
+racket-pdf
 ==============
 README text here.
