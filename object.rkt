@@ -188,11 +188,11 @@ Same goes for the following:
                                'ArtBox))
 (define-predicate page-boundaries? PageBoundaries)
 
-(define-type PageTreeNodes
+(define-type PageTree
   (List
    (Pairof 'Type 'Pages)
-   (Pairof 'Parent (U IndirectReference PDFNull))
-   (Pairof 'Kids (Arrayof PageTreeNodes))
+   (Pairof 'Parent (U (Indirect Dictionary) PDFNull))
+   (Pairof 'Kids (Arrayof (U (Indirect PageTree) (Indirect Dictionary))))
    (Pairof 'Count Positive-Integer)))
 
 (define-type PageLayout (U 'SinglePage

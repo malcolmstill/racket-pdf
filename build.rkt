@@ -2,7 +2,8 @@
 
 (require "bytes.rkt"
          "object.rkt"
-         "catalog.rkt"
+         ;"catalog.rkt"
+         ;"page.rkt"
          "trailer.rkt"
          "xref.rkt")
 
@@ -62,7 +63,7 @@ compile-pdf. This is where all our hard work gets rewarded.
    ;                    (make-entry (+ heading-length offset-1 1) 0 'n)) object-byte-lengths))
   (define xrefs (foldl (λ ([l : Integer] [ls : (Listof Integer)])
                          (cons (+ l (car ls)) ls)) (list heading-length) object-byte-lengths))
-  (display xrefs)
+  ;(display xrefs)
   (define xref-table (xref 0 (+ object-count 1) (map (λ ([x : Integer])
                                                        (make-entry x 0 'n)) (reverse (cdr xrefs)))))
 
@@ -79,6 +80,9 @@ compile-pdf. This is where all our hard work gets rewarded.
   (display bytes file)
   (close-output-port file))
 
-(write-pdf (compile-pdf (catalog (Indirect (dictionary)))) "test.pdf")
+;(write-pdf (compile-pdf (catalog (ann (Indirect (dictionary
+ ;                                                'Type 'Pages
+  ;                                               'Kids (list)
+   ;                                              'Count 0)) (Indirect Dictionary)))) "test.pdf")
 
 
