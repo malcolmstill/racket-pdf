@@ -3,11 +3,7 @@
 (require "object.rkt"
          "versions.rkt")
 
-(provide (all-defined-out))
-
-(define-type ExtensionsDictionary (List (Pairof 'Type 'DeveloperExtensions)
-                                        (Pairof 'BaseVersion Version)
-                                        (Pairof 'ExtensionLevel Integer)))
+(provide extensions)
 
 (: extensions : Version Integer -> ExtensionsDictionary)
 (define (extensions version level)

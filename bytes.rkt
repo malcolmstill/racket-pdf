@@ -4,7 +4,9 @@
          "trailer.rkt"
          typed/rackunit)
 
-(provide ->bytes)
+(provide ->bytes
+         pdf-heading
+         trailer->bytes)
 
 #|
 bytes.rkt provides functions for generating the byte representations
@@ -36,7 +38,7 @@ of PDF objects.
                                 #" "
                                 (->bytes (cdr pair)))) filtered-elements)
            line-feed))
-   #" >>" line-feed))
+   #" >>"))
 
 (: array->bytes : Array -> Bytes)
 (define (array->bytes array)
@@ -88,11 +90,21 @@ of PDF objects.
     [(false? obj) #"false"]
     [#t #"true"]))
 
+(: pdf-heading : Nonnegative-Integer Nonnegative-Integer -> Bytes)
+(define (pdf-heading major minor)
+  (bytes-append (string->bytes/utf-8
+                 (string-append "%PDF-"
+                                (number->string major) "."
+                                (number->string minor)))
+                line-feed
+                (string->bytes/utf-8 "%‚„œ")
+                line-feed))
+
 (: trailer->bytes : Trailer -> Bytes)
 (define (trailer->bytes trailer)
   (bytes-append
    #"trailer" line-feed
-   (dictionary->bytes (Trailer-dict trailer))
+   (dictionary->bytes (Trailer-dict trailer)) line-feed
    #"startxref" line-feed
    (number->bytes (Trailer-offset trailer)) line-feed
    #"%%EOF"))

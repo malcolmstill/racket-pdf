@@ -1,65 +1,17 @@
 #lang typed/racket
 
 (require "object.rkt"
-         "extensions.rkt"
-         "uri.rkt"
          "versions.rkt")
 
-(define-type PageLayout (U 'SinglePage
-                           'OneColumn
-                           'TwoColumnLeft
-                           'TwoColumnRight
-                           'TwoPageLeft
-                           'TwoPageRight))
-(define-predicate page-layout? PageLayout)
+(provide (all-defined-out))
 
-(define-type PageMode (U 'UseNone
-                         'UseOutlines
-                         'UseThumbs
-                         'FullScreen
-                         'UseOC
-                         'UseAttachments))
-(define-predicate page-mode? PageMode)
-
-(define-type Catalog (List
-                      (Pairof 'Type 'Catalog)
-                      (Pairof 'Version (U Version PDFNull))
-                      (Pairof 'Extensions (U ExtensionsDictionary PDFNull))
-                      (Pairof 'Pages IndirectReference) ; Dictionary
-                      ;(Pairof 'PageLabels NumberTree)
-                      (Pairof 'Names (U Dictionary PDFNull))
-                      (Pairof 'Dests (U Dictionary PDFNull))
-                      (Pairof 'ViewerPreferences (U Dictionary PDFNull))
-                      (Pairof 'PageLayout (U PageLayout PDFNull))
-                      (Pairof 'PageMode (U PageMode PDFNull))
-                      (Pairof 'Outlines (U IndirectReference PDFNull)) ;Dictionary
-                      (Pairof 'Threads (U IndirectReference PDFNull)) ; Array
-                      (Pairof 'OpenAction (U Array Dictionary PDFNull))
-                      (Pairof 'AA (U Dictionary PDFNull))
-                      (Pairof 'URI (U CatalogURIDictionary PDFNull))
-                      (Pairof 'AcroForm (U Dictionary PDFNull))
-                      (Pairof 'Metadata (U Stream PDFNull))
-                      (Pairof 'StructTreeRoot (U Dictionary PDFNull))
-                      (Pairof 'MarkInfo (U Dictionary PDFNull))
-                      (Pairof 'Lang (U String PDFNull))
-                      (Pairof 'SpiderInfo (U Dictionary PDFNull))
-                      (Pairof 'OutputIntents (U Array PDFNull))
-                      (Pairof 'PieceInfo (U Dictionary PDFNull))
-                      (Pairof 'OCProperties (U Array PDFNull))
-                      (Pairof 'Perms (U Dictionary PDFNull))
-                      (Pairof 'Legal (U Dictionary PDFNull))
-                      (Pairof 'Requirements (U Array PDFNull))
-                      (Pairof 'Collection (U Dictionary PDFNull))
-                      (Pairof 'NeedsRendering (U Boolean PDFNull))))
-
-(: catalog (->*
-            (IndirectReference)
+(: catalog (->* ((Indirect Dictionary))
             (#:version Version
                        #:extensions ExtensionsDictionary
                        ; TODO #:page-labels
-                       #:names Dictionary
-                       #:dests Dictionary
-                       #:viewer-preferences Dictionary
+                       #:names NameDictionary
+                       #:dests IndirectReference
+                       #:viewer-preferences ViewerPreferencesDictionary
                        #:page-layout PageLayout
                        #:page-mode PageMode
                        #:outlines IndirectReference
@@ -80,13 +32,14 @@
                        #:legal Dictionary
                        #:requirements Array
                        #:collection Dictionary
-                       #:needs-rendering Boolean) Catalog))
+                       #:needs-rendering Boolean)
+            Catalog))
 (define (catalog #:version [version (PDFNull)]
                  #:extensions [extensions (PDFNull)]
-                 pages ; indirect reference
+                 pages
                  ; TODO #:pages-labels [page-labels #f]
                  #:names [names (PDFNull)]
-                 #:dests [dests (PDFNull)] ; indirect-reference
+                 #:dests [dests (PDFNull)]
                  #:viewer-preferences [viewer-preferences (PDFNull)]
                  #:page-layout [page-layout (PDFNull)]
                  #:page-mode [page-mode (PDFNull)]
@@ -111,7 +64,7 @@
                  #:needs-rendering [needs-rendering (PDFNull)])
   (dictionary
    'Type 'Catalog
-   'Version version
+   'Version version 
    'Extensions extensions
    'Pages pages
    'Names names

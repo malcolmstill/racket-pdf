@@ -9,4 +9,6 @@ Or do we just have a function that takes a
 |#
 
 
-(define Name-Tree 
+(define-type Tree (U leaf node))
+(struct leaf ([val : Number]))
+(struct node ([left : Tree] [right : Tree]))

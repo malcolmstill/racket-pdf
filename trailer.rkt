@@ -2,22 +2,26 @@
 
 (require "object.rkt")
 
-(provide (all-defined-out))
+(provide trailer)
 
 #|
+Get error with the following. Moving to object.rkt seems to fix it?
+../../../Applications/Racket v6.2/share/pkgs/typed-racket-lib/typed-racket/static-contracts/instantiate.rkt:88:10: hash-ref: no value found for key
+  key: #<syntax n*13>
 
-|#
-
-(struct Trailer ([dict : Dictionary] [offset : Integer]))
 (define-type TrailerDictionary (List
                                 (Pairof 'Size Integer)
                                 (Pairof 'Prev (U Integer PDFNull))
-                                (Pairof 'Root IndirectReference)
+                                (Pairof 'Root (Indirect Dictionary))
                                 (Pairof 'Encrypt (U Dictionary PDFNull))
                                 (Pairof 'Info (U Dictionary PDFNull))
-                                (Pairof 'ID Array)))
-       
-(: trailer (->* (Integer IndirectReference Integer)
+                                (Pairof 'ID (U Array PDFNull))
+                                ))
+
+(struct Trailer ([dict : TrailerDictionary] [offset : Integer]) #:transparent)
+|#
+
+(: trailer (->* (Integer PDFObject Integer)
                 (#:prev Integer
                         #:encrypt Dictionary
                         #:info Dictionary
@@ -37,3 +41,4 @@
             'Info info
             'ID id)
            offset))
+

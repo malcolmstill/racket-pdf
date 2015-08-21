@@ -2,11 +2,8 @@
 
 (require "object.rkt")
 
-(provide (all-defined-out))
-
-(define-type URIDictionary (List (Pairof 'S 'URI)
-                                 (Pairof 'URI String)
-                                 (Pairof 'IsMap (U PDFNull Boolean))))
+(provide uri
+         catalog-uri)
 
 (: uri (->* (String) (Boolean) URIDictionary))
 (define (uri s [b (PDFNull)])
@@ -15,8 +12,6 @@
    'URI s
    'IsMap b))
 
-(define-type CatalogURIDictionary (List (Pairof 'S 'URI)
-                                        (Pairof 'Base String)))
 
 (: catalog-uri : String -> CatalogURIDictionary)
 (define (catalog-uri s)
