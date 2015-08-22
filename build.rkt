@@ -16,7 +16,7 @@ build.rkt. Here we put together the objects of our PDF file
 (: object-count Nonnegative-Integer)
 (define object-count 0)
 
-(: object-list (Listof PDFObject))
+(: object-list (Listof IndirectObject))
 (define object-list (list))
 
 
@@ -53,6 +53,27 @@ access time?)
                             ir))]
     [else obj]))
 
+#|
+We could reorder the object list so it's in order (I'm not sure this is general
+enough). Instead we can build a map with keys being the object no and values
+being the byte length of the object
+|#
+(: object-map : (HashTable Nonnegative-Integer Integer) (Listof IndirectObject) -> (HashTable Nonnegative-Integer Integer))
+(define (object-map om object-list)
+  (if (empty? object-list)
+      om
+      (object-map
+       (let ([object (car object-list)])
+         (hash-set om (IndirectObject-obj-num object) (bytes-length (->bytes object)))) (cdr object-list))))
+
+; Can't seem to convince the type checker to map plain cdr...
+(: cdr-length : (Pairof Nonnegative-Integer Integer) -> Integer)
+(define (cdr-length pair)
+  (cdr pair))
+
+(: car-length : (Pairof Nonnegative-Integer Integer) -> Integer)
+(define (car-length pair)
+  (car pair))
 
 #|
 compile-pdf. This is where all our hard work gets rewarded.
@@ -62,23 +83,31 @@ compile-pdf. This is where all our hard work gets rewarded.
   (set! object-list '())
   (set! object-count 0)
   (define root (resolve-indirect (Indirect cat) (PDFNull)))
+  ;(define obj-map (object-map (ann (hash) (HashTable Nonnegative-Integer Integer)) object-list))
   
   (define heading (pdf-heading 1 7))
   (define heading-length (bytes-length heading))
 
   ; Convert our objects to bytes and calculate the byte-length of each object
+  ; We need to reorder 
   (define object-bytes (map ->bytes object-list))
   (define object-byte-lengths (map bytes-length object-bytes))
 
   (define start-of-xref (foldl (λ ([l : Integer] [count : Integer])
-                                 (+ l count)) 0 (cons heading-length object-byte-lengths)))
-  ;(define xrefs (map (λ ([offset-1 : Integer])
-   ;                    (make-entry (+ heading-length offset-1 1) 0 'n)) object-byte-lengths))
-  (define xrefs (foldl (λ ([l : Integer] [ls : (Listof Integer)])
-                         (cons (+ l (car ls)) ls)) (list heading-length) object-byte-lengths))
-  ;(display xrefs)
-  (define xref-table (xref 0 (+ object-count 1) (map (λ ([x : Integer])
-                                                       (make-entry x 0 'n)) (reverse (cdr xrefs)))))
+                                 (+ l count))
+                               0
+                               (cons heading-length object-byte-lengths)))
+  
+  (define byte-length-sums (foldl (λ ([l : Integer] [ls : (Listof Integer)])
+                                    (cons (+ l (car ls)) ls)) (list heading-length) object-byte-lengths))
+  (define xrefs (map (λ ([x : Integer] [o : IndirectObject])
+                       (cons (IndirectObject-obj-num o) x)) (reverse (cdr byte-length-sums)) object-list))
+
+  (define xref-table (xref 0 (+ object-count 1) (map (λ ([x : (Pairof Nonnegative-Integer Integer)])
+                                                       (make-entry (cdr x) 0 'n))
+                                                     (sort xrefs (λ ([x1 : (Pairof Nonnegative-Integer Integer)]
+                                                                     [x2 : (Pairof Nonnegative-Integer Integer)])
+                                                                   (< (car x1) (car x2)))))))
 
   ; Smash all our bytes together:
   (bytes-append
@@ -92,10 +121,4 @@ compile-pdf. This is where all our hard work gets rewarded.
   (define file (open-output-file filename #:mode 'binary #:exists 'replace))
   (display bytes file)
   (close-output-port file))
-
-;(write-pdf (compile-pdf (catalog (ann (Indirect (dictionary
-;                                                'Type 'Pages
-  ;                                               'Kids (list)
-   ;                                              'Count 0)) (Indirect Dictionary)))) "test.pdf")
-
 
