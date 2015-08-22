@@ -3,7 +3,7 @@
 (require "bytes.rkt"
          "object.rkt"
          ;"catalog.rkt"
-         ;"page.rkt"
+         "page.rkt"
          "trailer.rkt"
          "xref.rkt")
 
@@ -19,6 +19,7 @@ build.rkt. Here we put together the objects of our PDF file
 (: object-list (Listof PDFObject))
 (define object-list (list))
 
+
 #|
 resolve-indirect traverses the PDFObject tree replacing any (Indirect obj)
 with an (IndirectReference on gn) and conses (IndirectObject on gn obj)
@@ -26,20 +27,32 @@ onto object-list. In the future we may want to add an optimiser that makes
 objects indirect if they can be (increases the size of the PDF but speeds up
 access time?)
 |#
-(: resolve-indirect : PDFObject -> PDFObject)
-(define (resolve-indirect obj)
+(: resolve-indirect : PDFObject PDFObject -> PDFObject)
+(define (resolve-indirect obj parent)
   (cond
+    [(Page? obj) (map (λ ([key-value : (Pairof Symbol PDFObject)])
+                        (match key-value
+                          [(cons 'Parent _) (cons 'Parent parent)]
+                          [else (cons (car key-value) (resolve-indirect (cdr key-value) parent))])) obj)]
     [(Dictionary? obj) (map (λ ([key-value : (Pairof Symbol PDFObject)])
-                              (cons (car key-value) (resolve-indirect (cdr key-value)))) obj)]
-    [(Array? obj) (map resolve-indirect obj)]
+                              (cons (car key-value) (resolve-indirect (cdr key-value) parent))) obj)]
+    [(Array? obj) (map (λ ([o : PDFObject])
+                           (resolve-indirect o parent)) obj)]
     [(Indirect? obj) (begin
-                       (set! object-count (+ object-count 1))
-                       (let [(obj-no object-count)]
-                         (set! object-list
-                               (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj)))
-                                     object-list))
-                         (IndirectReference obj-no 0)))]
+                          (set! object-count (+ object-count 1))
+                          (let* ([obj-no object-count]
+                                 [ir (IndirectReference obj-no 0)])
+                            (cond
+                              [(Page? (Indirect-object obj)) 
+                               (set! object-list
+                                     (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj) parent))
+                                           object-list))]
+                              [else (set! object-list
+                                     (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj) ir))
+                                           object-list))])
+                            ir))]
     [else obj]))
+
 
 #|
 compile-pdf. This is where all our hard work gets rewarded.
@@ -48,7 +61,7 @@ compile-pdf. This is where all our hard work gets rewarded.
 (define (compile-pdf cat)
   (set! object-list '())
   (set! object-count 0)
-  (define root (resolve-indirect (Indirect cat)))
+  (define root (resolve-indirect (Indirect cat) (PDFNull)))
   
   (define heading (pdf-heading 1 7))
   (define heading-length (bytes-length heading))
@@ -81,7 +94,7 @@ compile-pdf. This is where all our hard work gets rewarded.
   (close-output-port file))
 
 ;(write-pdf (compile-pdf (catalog (ann (Indirect (dictionary
- ;                                                'Type 'Pages
+;                                                'Type 'Pages
   ;                                               'Kids (list)
    ;                                              'Count 0)) (Indirect Dictionary)))) "test.pdf")
 

@@ -192,8 +192,11 @@ Same goes for the following:
   (List
    (Pairof 'Type 'Pages)
    (Pairof 'Parent (U (Indirect Dictionary) PDFNull))
+   (Pairof 'MediaBox (U (Arrayof Number) PDFNull))
    (Pairof 'Kids (Arrayof (U (Indirect PageTree) (Indirect Dictionary))))
    (Pairof 'Count Positive-Integer)))
+
+(define-type PageTree? PageTree)
 
 (define-type PageLayout (U 'SinglePage
                            'OneColumn

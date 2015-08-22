@@ -5,17 +5,23 @@
          "page.rkt"
          "build.rkt")
 
-(: page Dictionary)
-(define page (dictionary
-              'Type 'Page
-              'MediaBox (list 0 0 595 842)))
+;(: contents Steam)
+
+
+(: page1 Page)
+(define page1 (page (PDFNull)
+                    ;#:media-box (list 0 0 10 10)
+                    ;#:contents contents
+                    ))
 
 (: pages PageTree)
-(define pages (ann (dictionary
+(define pages (dictionary
                     'Type 'Pages
                     'Parent (PDFNull)
-                    'Kids (list (Indirect page))
-                    'Count 1) PageTree))
+                    'MediaBox (list 0 0 612 794)
+                    'Kids (list (Indirect page1)
+                                (Indirect page1))
+                    'Count 2))
 
 (: cat Catalog)
 (define cat (catalog (Indirect pages)))
