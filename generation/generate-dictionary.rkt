@@ -1,5 +1,10 @@
 #lang racket
 
+#|
+Some macros don't work with Typed Racket but we can always right a generator outside
+of Typed Racket.
+|#
+
 (define (pairspec z)
   (match z
     [(list 'Pairof nm (list-no-order U y PDFNull)) (list 'Pairof nm y)]

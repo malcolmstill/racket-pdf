@@ -2,13 +2,18 @@
 
 (require "object.rkt"
          "catalog.rkt"
+         "font.rkt"
+         "text.rkt"
          "page.rkt"
          "build.rkt")
 
 (: page1 Page)
 (define page1 (page (PDFNull)
                     ;#:media-box (list 0 0 10 10)
-                    ;#:contents contents
+                    #:contents (Indirect (text->stream 'F1 18 0 0 "hello"))
+                    #:resources (ann (dictionary
+                                      'Font (make-font 'F1 (type1 'Helvetica))) Dictionary)
+                                        
                     ))
 
 (: page2 Page)

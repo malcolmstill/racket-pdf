@@ -39,7 +39,7 @@ be passed down by the parent when compile-pdf is called.
    (Pairof 'TrimBox (U (Arrayof Number) PDFNull))
    (Pairof 'ArtBox (U (Arrayof Number) PDFNull))
    (Pairof 'BoxColorInfo (U Dictionary PDFNull))
-   (Pairof 'Contents (U Stream (Arrayof Stream) PDFNull))
+   (Pairof 'Contents (U (Indirect Stream) (Arrayof (Indirect Stream)) PDFNull))
    (Pairof 'Rotate (U Number PDFNull))
    (Pairof 'Group (U Dictionary PDFNull))
    (Pairof 'Thumb (U Stream PDFNull))
@@ -71,7 +71,7 @@ be passed down by the parent when compile-pdf is called.
                                          #:trim-box (Arrayof Number)
                                          #:art-box (Arrayof Number)
                                          #:box-color-info Dictionary
-                                         #:contents (U Stream (Arrayof Stream))
+                                         #:contents (U (Indirect Stream) (Arrayof (Indirect Stream)))
                                          #:rotate Number
                                          #:group Dictionary
                                          #:thumb Stream

@@ -253,7 +253,6 @@ Same goes for the following:
                       (Pairof 'Version (U Version PDFNull))
                       (Pairof 'Extensions (U ExtensionsDictionary PDFNull))
                       (Pairof 'Pages (Indirect Dictionary))
-                      ;(Pairof 'Pages IndirectReference) ; Dictionary
                       ;(Pairof 'PageLabels NumberTree)
                       (Pairof 'Names (U NameDictionary PDFNull))
                       (Pairof 'Dests (U IndirectReference PDFNull))

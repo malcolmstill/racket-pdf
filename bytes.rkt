@@ -68,10 +68,10 @@ of PDF objects.
 (: stream->bytes : Stream -> Bytes)
 (define (stream->bytes stream)
   (bytes-append
-   (dictionary->bytes (Stream-dict stream))
+   (dictionary->bytes (Stream-dict stream)) line-feed
    #"stream" line-feed
    (Stream-data stream) line-feed
-   #"endstream" line-feed))
+   #"endstream"))
 
 (: ->bytes (PDFObject -> Bytes))
 (define (->bytes obj)

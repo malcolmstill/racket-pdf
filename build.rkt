@@ -19,6 +19,10 @@ build.rkt. Here we put together the objects of our PDF file
 (: object-list (Listof IndirectObject))
 (define object-list (list))
 
+(: has-parent? : PDFObject -> Boolean)
+(define (has-parent? object)
+  (or (Page? object)))
+
 
 #|
 resolve-indirect traverses the PDFObject tree replacing any (Indirect obj)
@@ -43,7 +47,7 @@ access time?)
                           (let* ([obj-no object-count]
                                  [ir (IndirectReference obj-no 0)])
                             (cond
-                              [(Page? (Indirect-object obj)) 
+                              [(has-parent? (Indirect-object obj)) 
                                (set! object-list
                                      (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj) parent))
                                            object-list))]
@@ -65,15 +69,6 @@ being the byte length of the object
       (object-map
        (let ([object (car object-list)])
          (hash-set om (IndirectObject-obj-num object) (bytes-length (->bytes object)))) (cdr object-list))))
-
-; Can't seem to convince the type checker to map plain cdr...
-(: cdr-length : (Pairof Nonnegative-Integer Integer) -> Integer)
-(define (cdr-length pair)
-  (cdr pair))
-
-(: car-length : (Pairof Nonnegative-Integer Integer) -> Integer)
-(define (car-length pair)
-  (car pair))
 
 #|
 compile-pdf. This is where all our hard work gets rewarded.
