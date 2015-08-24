@@ -47,6 +47,4 @@
      (->bytes (add-between (map (λ ([line : (Listof String)])
                                   (->bytes (apply string-append (add-between line " "))))
                                 (split-paragraph string width)) #" ' "))
-     (cond
-       [(string? string) #" Tj "]
-       [else #" TJ "]) #"ET")))
+     #"ET")))
