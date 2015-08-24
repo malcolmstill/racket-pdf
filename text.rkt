@@ -44,7 +44,7 @@
      (->bytes size) #" Tf "
      (->bytes x) #" " (->bytes y) #" Td "
      (->bytes leading) #" TL "
-     (->bytes (add-between (map (λ ([line : (Listof String)])
-                                  (->bytes (apply string-append (add-between line " "))))
-                                (split-paragraph string width)) #" ' "))
-     #"ET")))
+     (apply bytes-append (add-between (map (λ ([line : (Listof String)])
+                                             (->bytes (apply string-append (add-between line " "))))
+                                           (split-paragraph string width)) #" ' "))
+     #" ' ET")))
