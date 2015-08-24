@@ -33,18 +33,18 @@ be passed down by the parent when compile-pdf is called.
    (Pairof 'Parent (U IndirectReference PDFNull))
    (Pairof 'LastModified (U String PDFNull))
    (Pairof 'Resources (U Dictionary PDFNull))
-   (Pairof 'MediaBox (U (Arrayof Number) PDFNull))
-   (Pairof 'CropBox (U (Arrayof Number) PDFNull))
-   (Pairof 'BleedBox (U (Arrayof Number) PDFNull))
-   (Pairof 'TrimBox (U (Arrayof Number) PDFNull))
-   (Pairof 'ArtBox (U (Arrayof Number) PDFNull))
+   (Pairof 'MediaBox (U (Arrayof Real) PDFNull))
+   (Pairof 'CropBox (U (Arrayof Real) PDFNull))
+   (Pairof 'BleedBox (U (Arrayof Real) PDFNull))
+   (Pairof 'TrimBox (U (Arrayof Real) PDFNull))
+   (Pairof 'ArtBox (U (Arrayof Real) PDFNull))
    (Pairof 'BoxColorInfo (U Dictionary PDFNull))
    (Pairof 'Contents (U (Indirect Stream) (Arrayof (Indirect Stream)) PDFNull))
-   (Pairof 'Rotate (U Number PDFNull))
+   (Pairof 'Rotate (U Real PDFNull))
    (Pairof 'Group (U Dictionary PDFNull))
    (Pairof 'Thumb (U Stream PDFNull))
    (Pairof 'B (U Array PDFNull))
-   (Pairof 'Dur (U Number PDFNull))
+   (Pairof 'Dur (U Real PDFNull))
    (Pairof 'Trans (U Dictionary PDFNull))
    (Pairof 'Annots (U (Arrayof (Indirect Dictionary)) PDFNull))
    (Pairof 'AA (U Dictionary PDFNull))
@@ -52,12 +52,12 @@ be passed down by the parent when compile-pdf is called.
    (Pairof 'PieceInfo (U Dictionary PDFNull))
    (Pairof 'StructParents (U Integer PDFNull))
    (Pairof 'ID (U String PDFNull)) ; spec says "byte string"
-   (Pairof 'PZ (U Number PDFNull))
+   (Pairof 'PZ (U Real PDFNull))
    (Pairof 'SeparationInfo (U Dictionary PDFNull))
    (Pairof 'Tabs (U 'R 'C 'S PDFNull))
    (Pairof 'TemplateInstantiated (U Symbol PDFNull))
    (Pairof 'PresSteps (U Dictionary PDFNull))
-   (Pairof 'UserUnit (U Number PDFNull)) ; default to 1/72 inch (1 pt)
+   (Pairof 'UserUnit (U Real PDFNull)) ; default to 1/72 inch (1 pt)
    (Pairof 'VP (U Dictionary PDFNull))))
 
 (define-predicate Page? Page)
@@ -65,18 +65,18 @@ be passed down by the parent when compile-pdf is called.
 
 (: page (->* ((U IndirectReference PDFNull)) (#:last-modified String
                                          #:resources Dictionary
-                                         #:media-box (Arrayof Number)
-                                         #:crop-box (Arrayof Number) 
-                                         #:bleed-box (Arrayof Number)
-                                         #:trim-box (Arrayof Number)
-                                         #:art-box (Arrayof Number)
+                                         #:media-box (Arrayof Real)
+                                         #:crop-box (Arrayof Real) 
+                                         #:bleed-box (Arrayof Real)
+                                         #:trim-box (Arrayof Real)
+                                         #:art-box (Arrayof Real)
                                          #:box-color-info Dictionary
                                          #:contents (U (Indirect Stream) (Arrayof (Indirect Stream)))
-                                         #:rotate Number
+                                         #:rotate Real
                                          #:group Dictionary
                                          #:thumb Stream
                                          #:b Array
-                                         #:dur Number
+                                         #:dur Real
                                          #:trans Dictionary
                                          #:annots (Arrayof (Indirect Dictionary))
                                          #:aa Dictionary
@@ -84,12 +84,12 @@ be passed down by the parent when compile-pdf is called.
                                          #:piece-info Dictionary
                                          #:struct-parents Integer
                                          #:id String
-                                         #:pz Number
+                                         #:pz Real
                                          #:separation-info Dictionary
                                          #:tabs (U 'R 'C 'S)
                                          #:template-instantiated Symbol
                                          #:pres-steps Dictionary
-                                         #:user-unit Number
+                                         #:user-unit Real
                                          #:vp Dictionary) Page))
 (define (page parent
               #:last-modified [last-modified (PDFNull)]

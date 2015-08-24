@@ -20,7 +20,7 @@ of PDF objects.
 (define (process-name-string s)
   (string->bytes/utf-8 (string-replace (string-replace s "#" "#23") " " "#20")))
 
-(: number->bytes (Number -> Bytes))
+(: number->bytes (Real -> Bytes))
 (define (number->bytes number)
   (string->bytes/utf-8 (number->string number)))
 
@@ -77,7 +77,7 @@ of PDF objects.
 (define (->bytes obj)
   (cond
     [(string? obj) (bytes-append #"(" (string->bytes/utf-8 obj) #")")]
-    [(number? obj) (number->bytes obj)]
+    [(real? obj) (number->bytes obj)]
     [(symbol? obj) (bytes-append #"/" (process-name-string (symbol->string obj)))]
     [(PDFNull? obj) #"null"]
     [(null? obj) #"[]"] ; empty list
@@ -86,6 +86,7 @@ of PDF objects.
     [(IndirectObject? obj) (indirect-object->bytes obj)]
     [(IndirectReference? obj) (indirect-reference->bytes obj)]
     [(Stream? obj) (stream->bytes obj)]
+    [(bytes? obj) obj]
     ;[(Trailer? obj) (trailer->bytes obj)]
     [(false? obj) #"false"]
     [#t #"true"]))

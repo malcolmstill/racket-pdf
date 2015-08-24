@@ -87,9 +87,10 @@ on the type of reference?
 (define-type PDFObject (U Symbol ; Let's represent PDF name objects with symbols
                           String ; Likewise we'll represent PDF string objects with Racket's strings
                           PDFNull ; Don't think we can use Racket's null (the empty list)...let's make our own
-                          Boolean 
+                          Boolean
+                          Bytes ; 23/08/15, do we need this?
                           ;HexString
-                          Number
+                          Real
                           Array ; PDF arrays
                           Dictionary
                           Stream
@@ -192,7 +193,7 @@ Same goes for the following:
   (List
    (Pairof 'Type 'Pages)
    (Pairof 'Parent (U (Indirect Dictionary) PDFNull))
-   (Pairof 'MediaBox (U (Arrayof Number) PDFNull))
+   (Pairof 'MediaBox (U (Arrayof Real) PDFNull))
    (Pairof 'Kids (Arrayof (U (Indirect PageTree) (Indirect Dictionary))))
    (Pairof 'Count Positive-Integer)))
 
