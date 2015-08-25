@@ -9,6 +9,39 @@ Each page of the PDF is represented by a page object. The page object
 is a dictionary.
 |#
 
+(define-type PageMode (U 'UseNone
+                         'UseOutlines
+                         'UseThumbs
+                         'FullScreen
+                         'UseOC
+                         'UseAttachments))
+(define-predicate page-mode? PageMode)
+
+(define-type PageBoundaries (U 'MediaBox
+                               'CropBox
+                               'BleedBox
+                               'TrimBox
+                               'ArtBox))
+(define-predicate page-boundaries? PageBoundaries)
+
+(define-type PageTree
+  (List
+   (Pairof 'Type 'Pages)
+   (Pairof 'Parent (U (Indirect Dictionary) PDFNull))
+   (Pairof 'MediaBox (U (Arrayof Real) PDFNull))
+   (Pairof 'Kids (Arrayof (U (Indirect PageTree) (Indirect Dictionary))))
+   (Pairof 'Count Positive-Integer)))
+
+(define-type PageTree? PageTree)
+
+(define-type PageLayout (U 'SinglePage
+                           'OneColumn
+                           'TwoColumnLeft
+                           'TwoColumnRight
+                           'TwoPageLeft
+                           'TwoPageRight))
+(define-predicate page-layout? PageLayout)
+
 #|
 Is my type pedantry too much?
 
@@ -156,4 +189,7 @@ be passed down by the parent when compile-pdf is called.
    
    
    
-
+#|
+(: pages->balanced-tree : (Listof Page) -> PageTree)
+(define (pages->balanced-tree pages)
+  )|#

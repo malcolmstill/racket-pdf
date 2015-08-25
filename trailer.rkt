@@ -2,7 +2,7 @@
 
 (require "object.rkt")
 
-(provide trailer)
+(provide (all-defined-out))
 
 #|
 Get error with the following. Moving to object.rkt seems to fix it?
@@ -20,6 +20,17 @@ Get error with the following. Moving to object.rkt seems to fix it?
 
 (struct Trailer ([dict : TrailerDictionary] [offset : Integer]) #:transparent)
 |#
+
+(define-type TrailerDictionary (List
+                                (Pairof 'Size Integer)
+                                (Pairof 'Prev (U Integer PDFNull))
+                                (Pairof 'Root PDFObject)
+                                (Pairof 'Encrypt (U Dictionary PDFNull))
+                                (Pairof 'Info (U Dictionary PDFNull))
+                                (Pairof 'ID (U Array PDFNull))
+                                ))
+
+(struct Trailer ([dict : TrailerDictionary] [offset : Integer]) #:transparent)
 
 (: trailer (->* (Integer PDFObject Integer)
                 (#:prev Integer

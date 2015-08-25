@@ -25,16 +25,6 @@
                             (cons (reverse (cons word (reverse (car lines)))) (cdr lines)))))
                   '() (string-split string))))
 
-#|
-(: flatten-lines : (Listof (U Bytes (Listof Bytes))) -> Bytes)
-(define (flatten-lines list)
-  (apply bytes-append
-         (reverse (foldl (λ ([line/break : (U Bytes (Listof Bytes))]
-                             [lines : (Listof Bytes)])
-                           (cond
-                             [(bytes? line/break) (cons line/break lines)]
-                             [else (append (reverse line/break) lines)])) '() list))))
-|#
 
 (: text->paragraph : Symbol Real Real Real Real Real String -> Stream)
 (define (text->paragraph font size width leading x y string)
@@ -44,7 +34,8 @@
      (->bytes size) #" Tf "
      (->bytes x) #" " (->bytes y) #" Td "
      (->bytes leading) #" TL "
-     (apply bytes-append (add-between (map (λ ([line : (Listof String)])
-                                             (->bytes (apply string-append (add-between line " "))))
-                                           (split-paragraph string width)) #" ' "))
+     (apply bytes-append (let ([x (map (λ ([line : (Listof String)])
+                                         (->bytes (apply string-append (add-between line " "))))
+                                       (split-paragraph string width))])
+                           (cons (car x) (cons #" Tj " (add-between (cdr x) #" ' ")))))
      #" ' ET")))

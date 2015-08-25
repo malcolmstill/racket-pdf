@@ -2,7 +2,7 @@
 
 (require "bytes.rkt"
          "object.rkt"
-         ;"catalog.rkt"
+         "catalog.rkt"
          "page.rkt"
          "trailer.rkt"
          "xref.rkt")

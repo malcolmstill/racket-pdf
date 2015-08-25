@@ -1,9 +1,45 @@
 #lang typed/racket
 
 (require "object.rkt"
-         "versions.rkt")
+         "extensions.rkt"
+         "namedict.rkt"
+         "page.rkt"
+         "uri.rkt"
+         "versions.rkt"
+         "viewer-preferences.rkt")
 
 (provide (all-defined-out))
+
+(define-type Catalog (List
+                      (Pairof 'Type 'Catalog)
+                      (Pairof 'Version (U Version PDFNull))
+                      (Pairof 'Extensions (U ExtensionsDictionary PDFNull))
+                      (Pairof 'Pages (Indirect Dictionary))
+                      ;(Pairof 'PageLabels NumberTree)
+                      (Pairof 'Names (U NameDictionary PDFNull))
+                      (Pairof 'Dests (U IndirectReference PDFNull))
+                      (Pairof 'ViewerPreferences (U ViewerPreferencesDictionary PDFNull))
+                      (Pairof 'PageLayout (U PageLayout PDFNull))
+                      (Pairof 'PageMode (U PageMode PDFNull))
+                      (Pairof 'Outlines (U IndirectReference PDFNull)) ;Dictionary
+                      (Pairof 'Threads (U IndirectReference PDFNull)) ; Array
+                      (Pairof 'OpenAction (U Array Dictionary PDFNull))
+                      (Pairof 'AA (U Dictionary PDFNull))
+                      (Pairof 'URI (U CatalogURIDictionary PDFNull))
+                      (Pairof 'AcroForm (U Dictionary PDFNull))
+                      (Pairof 'Metadata (U Stream PDFNull))
+                      (Pairof 'StructTreeRoot (U Dictionary PDFNull))
+                      (Pairof 'MarkInfo (U Dictionary PDFNull))
+                      (Pairof 'Lang (U String PDFNull))
+                      (Pairof 'SpiderInfo (U Dictionary PDFNull))
+                      (Pairof 'OutputIntents (U Array PDFNull))
+                      (Pairof 'PieceInfo (U Dictionary PDFNull))
+                      (Pairof 'OCProperties (U Array PDFNull))
+                      (Pairof 'Perms (U Dictionary PDFNull))
+                      (Pairof 'Legal (U Dictionary PDFNull))
+                      (Pairof 'Requirements (U Array PDFNull))
+                      (Pairof 'Collection (U Dictionary PDFNull))
+                      (Pairof 'NeedsRendering (U Boolean PDFNull))))
 
 (: catalog (->* ((Indirect Dictionary))
             (#:version Version
