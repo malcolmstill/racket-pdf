@@ -25,7 +25,10 @@
                             (cons (reverse (cons word (reverse (car lines)))) (cdr lines)))))
                   '() (string-split string))))
 
-
+#|
+text->paragraph: test function for paragraphs. If we really want a "greedy" algorithm
+we'd want to interrogate the length of each line given the glyph widths
+|#
 (: text->paragraph : Symbol Real Real Real Real Real String -> Stream)
 (define (text->paragraph font size width leading x y string)
   (stream

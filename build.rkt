@@ -19,10 +19,8 @@ build.rkt. Here we put together the objects of our PDF file
 (: object-list (Listof IndirectObject))
 (define object-list (list))
 
-(: has-parent? : PDFObject -> Boolean)
-(define (has-parent? object)
-  (or (Page? object)))
 
+;(define-predicate has-parent? (U Page PageTree))
 
 #|
 resolve-indirect traverses the PDFObject tree replacing any (Indirect obj)
@@ -34,10 +32,10 @@ access time?)
 (: resolve-indirect : PDFObject PDFObject -> PDFObject)
 (define (resolve-indirect obj parent)
   (cond
-    [(Page? obj) (map (λ ([key-value : (Pairof Symbol PDFObject)])
-                        (match key-value
-                          [(cons 'Parent _) (cons 'Parent parent)]
-                          [else (cons (car key-value) (resolve-indirect (cdr key-value) parent))])) obj)]
+    [(or (Page? obj) (PageTree? obj)) (map (λ ([key-value : (Pairof Symbol PDFObject)])
+                                             (match key-value
+                                               [(cons 'Parent (IndirectReference _ _)) (cons 'Parent parent)]
+                                               [else (cons (car key-value) (resolve-indirect (cdr key-value) parent))])) obj)]
     [(Dictionary? obj) (map (λ ([key-value : (Pairof Symbol PDFObject)])
                               (cons (car key-value) (resolve-indirect (cdr key-value) parent))) obj)]
     [(Array? obj) (map (λ ([o : PDFObject])
@@ -47,7 +45,7 @@ access time?)
                           (let* ([obj-no object-count]
                                  [ir (IndirectReference obj-no 0)])
                             (cond
-                              [(has-parent? (Indirect-object obj)) 
+                              [(or (Page? (Indirect-object obj)) (PageTree? (Indirect-object obj)))
                                (set! object-list
                                      (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj) parent))
                                            object-list))]

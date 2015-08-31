@@ -24,15 +24,32 @@ is a dictionary.
                                'ArtBox))
 (define-predicate page-boundaries? PageBoundaries)
 
+#|
+Separate type for root page tree. Maybe don't need this. Instead pass in
+dummy IndirectReference to Page and then replace with parent. We can
+then have the same logic for PageTrees that have Parent.
+|#
+#|
+(define-type RootPageTree
+  (List
+   (Pairof 'Type 'Pages)
+   (Pairof 'MediaBox (U (Arrayof Real) PDFNull))
+   (Pairof 'Kids (Arrayof (U (Indirect PageTree) (Indirect Dictionary))))
+   (Pairof 'Count Positive-Integer)))
+
+(define-type RootPageTree? RootPageTree)
+
 (define-type PageTree
   (List
    (Pairof 'Type 'Pages)
-   (Pairof 'Parent (U (Indirect Dictionary) PDFNull))
+   (Pairof 'Parent (U IndirectReference PDFNull))
    (Pairof 'MediaBox (U (Arrayof Real) PDFNull))
    (Pairof 'Kids (Arrayof (U (Indirect PageTree) (Indirect Dictionary))))
    (Pairof 'Count Positive-Integer)))
 
 (define-type PageTree? PageTree)
+|#
+
 
 (define-type PageLayout (U 'SinglePage
                            'OneColumn
@@ -56,14 +73,11 @@ permutations of optional dictionary entries. Though that could potentially gener
 a lot of type defintions. TODO: work out how many permutations that would be.
 |#
 
-#|
-Let's build a page. Note that /Parent *has* to be an IndirectReference but this will
-be passed down by the parent when compile-pdf is called.
-|#
+
 (define-type Page
   (List
    (Pairof 'Type 'Page)
-   (Pairof 'Parent (U IndirectReference PDFNull))
+   (Pairof 'Parent IndirectReference)
    (Pairof 'LastModified (U String PDFNull))
    (Pairof 'Resources (U Dictionary PDFNull))
    (Pairof 'MediaBox (U (Arrayof Real) PDFNull))
@@ -95,37 +109,35 @@ be passed down by the parent when compile-pdf is called.
 
 (define-predicate Page? Page)
 
-
-(: page (->* ((U IndirectReference PDFNull)) (#:last-modified String
-                                         #:resources Dictionary
-                                         #:media-box (Arrayof Real)
-                                         #:crop-box (Arrayof Real) 
-                                         #:bleed-box (Arrayof Real)
-                                         #:trim-box (Arrayof Real)
-                                         #:art-box (Arrayof Real)
-                                         #:box-color-info Dictionary
-                                         #:contents (U (Indirect Stream) (Arrayof (Indirect Stream)))
-                                         #:rotate Real
-                                         #:group Dictionary
-                                         #:thumb Stream
-                                         #:b Array
-                                         #:dur Real
-                                         #:trans Dictionary
-                                         #:annots (Arrayof (Indirect Dictionary))
-                                         #:aa Dictionary
-                                         #:metadata Stream
-                                         #:piece-info Dictionary
-                                         #:struct-parents Integer
-                                         #:id String
-                                         #:pz Real
-                                         #:separation-info Dictionary
-                                         #:tabs (U 'R 'C 'S)
-                                         #:template-instantiated Symbol
-                                         #:pres-steps Dictionary
-                                         #:user-unit Real
-                                         #:vp Dictionary) Page))
-(define (page parent
-              #:last-modified [last-modified (PDFNull)]
+(: page (->* () (#:last-modified String
+                                 #:resources Dictionary
+                                 #:media-box (Arrayof Real)
+                                 #:crop-box (Arrayof Real) 
+                                 #:bleed-box (Arrayof Real)
+                                 #:trim-box (Arrayof Real)
+                                 #:art-box (Arrayof Real)
+                                 #:box-color-info Dictionary
+                                 #:contents (U (Indirect Stream) (Arrayof (Indirect Stream)))
+                                 #:rotate Real
+                                 #:group Dictionary
+                                 #:thumb Stream
+                                 #:b Array
+                                 #:dur Real
+                                 #:trans Dictionary
+                                 #:annots (Arrayof (Indirect Dictionary))
+                                 #:aa Dictionary
+                                 #:metadata Stream
+                                 #:piece-info Dictionary
+                                 #:struct-parents Integer
+                                 #:id String
+                                 #:pz Real
+                                 #:separation-info Dictionary
+                                 #:tabs (U 'R 'C 'S)
+                                 #:template-instantiated Symbol
+                                 #:pres-steps Dictionary
+                                 #:user-unit Real
+                                 #:vp Dictionary) Page))
+(define (page #:last-modified [last-modified (PDFNull)]
               #:resources [resources (PDFNull)]
               #:media-box [media-box (PDFNull)]
               #:crop-box [crop-box (PDFNull)]
@@ -155,7 +167,7 @@ be passed down by the parent when compile-pdf is called.
               #:vp [vp (PDFNull)])
   (dictionary
    'Type 'Page
-   'Parent parent
+   'Parent (IndirectReference 0 0)
    'LastModified last-modified
    'Resources resources
    'MediaBox media-box
@@ -185,11 +197,161 @@ be passed down by the parent when compile-pdf is called.
    'UserUnit user-unit
    'VP vp))
 
+(define-type PageTree
+  (List
+   (Pairof 'Type 'Pages)
+   (Pairof 'Parent (U IndirectReference PDFNull))
+   (Pairof 'Kids Array) ;(Arrayof (U (Indirect Page) (Indirect PageTree)))) This gives me a "could not be converted to a predicate" error
+   (Pairof 'Count Positive-Integer)
+   (Pairof 'LastModified (U String PDFNull))
+   (Pairof 'Resources (U Dictionary PDFNull))
+   (Pairof 'MediaBox (U (Arrayof Real) PDFNull))
+   (Pairof 'CropBox (U (Arrayof Real) PDFNull))
+   (Pairof 'BleedBox (U (Arrayof Real) PDFNull))
+   (Pairof 'TrimBox (U (Arrayof Real) PDFNull))
+   (Pairof 'ArtBox (U (Arrayof Real) PDFNull))
+   (Pairof 'BoxColorInfo (U Dictionary PDFNull))
+   (Pairof 'Contents (U (Indirect Stream) (Arrayof (Indirect Stream)) PDFNull))
+   (Pairof 'Rotate (U Real PDFNull))
+   (Pairof 'Group (U Dictionary PDFNull))
+   (Pairof 'Thumb (U Stream PDFNull))
+   (Pairof 'B (U Array PDFNull))
+   (Pairof 'Dur (U Real PDFNull))
+   (Pairof 'Trans (U Dictionary PDFNull))
+   (Pairof 'Annots (U (Arrayof (Indirect Dictionary)) PDFNull))
+   (Pairof 'AA (U Dictionary PDFNull))
+   (Pairof 'Metadata (U Stream PDFNull))
+   (Pairof 'PieceInfo (U Dictionary PDFNull))
+   (Pairof 'StructParents (U Integer PDFNull))
+   (Pairof 'ID (U String PDFNull)) ; spec says "byte string"
+   (Pairof 'PZ (U Real PDFNull))
+   (Pairof 'SeparationInfo (U Dictionary PDFNull))
+   (Pairof 'Tabs (U 'R 'C 'S PDFNull))
+   (Pairof 'TemplateInstantiated (U Symbol PDFNull))
+   (Pairof 'PresSteps (U Dictionary PDFNull))
+   (Pairof 'UserUnit (U Real PDFNull)) ; default to 1/72 inch (1 pt)
+   (Pairof 'VP (U Dictionary PDFNull))))
 
-   
-   
-   
+(define-predicate PageTree? PageTree)
+
+(: pagetree (->* (Array;(Arrayof (U (Indirect Page) (Indirect PageTree)))
+                  Positive-Integer)
+                 (#:parent (U PDFNull IndirectReference)
+                           #:last-modified String
+                           #:resources Dictionary
+                           #:media-box (Arrayof Real)
+                           #:crop-box (Arrayof Real) 
+                           #:bleed-box (Arrayof Real)
+                           #:trim-box (Arrayof Real)
+                           #:art-box (Arrayof Real)
+                           #:box-color-info Dictionary
+                           #:contents (U (Indirect Stream) (Arrayof (Indirect Stream)))
+                           #:rotate Real
+                           #:group Dictionary
+                           #:thumb Stream
+                           #:b Array
+                           #:dur Real
+                           #:trans Dictionary
+                           #:annots (Arrayof (Indirect Dictionary))
+                           #:aa Dictionary
+                           #:metadata Stream
+                           #:piece-info Dictionary
+                           #:struct-parents Integer
+                           #:id String
+                           #:pz Real
+                           #:separation-info Dictionary
+                           #:tabs (U 'R 'C 'S)
+                           #:template-instantiated Symbol
+                           #:pres-steps Dictionary
+                           #:user-unit Real
+                           #:vp Dictionary) PageTree))
+(define (pagetree kids
+                  count
+                  #:parent [parent (PDFNull)]
+                  #:last-modified [last-modified (PDFNull)]
+                  #:resources [resources (PDFNull)]
+                  #:media-box [media-box (PDFNull)]
+                  #:crop-box [crop-box (PDFNull)]
+                  #:bleed-box [bleed-box (PDFNull)]
+                  #:trim-box [trim-box (PDFNull)]
+                  #:art-box [art-box (PDFNull)]
+                  #:box-color-info [box-color-info (PDFNull)]
+                  #:contents [contents (PDFNull)]
+                  #:rotate [rotate (PDFNull)]
+                  #:group [group (PDFNull)]
+                  #:thumb [thumb (PDFNull)]
+                  #:b [b (PDFNull)]
+                  #:dur [dur (PDFNull)]
+                  #:trans [trans (PDFNull)]
+                  #:annots [annots (PDFNull)]
+                  #:aa [aa (PDFNull)]
+                  #:metadata [metadata (PDFNull)]
+                  #:piece-info [piece-info (PDFNull)]
+                  #:struct-parents [struct-parents (PDFNull)]
+                  #:id [id (PDFNull)]
+                  #:pz [pz (PDFNull)]
+                  #:separation-info [separation-info (PDFNull)]
+                  #:tabs [tabs (PDFNull)]
+                  #:template-instantiated [template-instantiated (PDFNull)]
+                  #:pres-steps [pres-steps (PDFNull)]
+                  #:user-unit [user-unit (PDFNull)]
+                  #:vp [vp (PDFNull)])
+  (dictionary
+   'Type 'Pages
+   'Parent parent;(IndirectReference 0 0)
+   'Kids kids
+   'Count count
+   'LastModified last-modified
+   'Resources resources
+   'MediaBox media-box
+   'CropBox crop-box
+   'BleedBox bleed-box
+   'TrimBox trim-box
+   'ArtBox art-box
+   'BoxColorInfo box-color-info
+   'Contents contents
+   'Rotate rotate
+   'Group group
+   'Thumb thumb
+   'B b
+   'Dur dur 
+   'Trans trans
+   'Annots annots
+   'AA aa
+   'Metadata metadata
+   'PieceInfo piece-info
+   'StructParents struct-parents
+   'ID id
+   'PZ pz
+   'SeparationInfo separation-info
+   'Tabs tabs
+   'TemplateInstantiated template-instantiated
+   'PresSteps pres-steps
+   'UserUnit user-unit
+   'VP vp))
+
 #|
-(: pages->balanced-tree : (Listof Page) -> PageTree)
-(define (pages->balanced-tree pages)
-  )|#
+Let's build a page. Note that /Parent *has* to be an IndirectReference but this will
+be passed down by the parent when compile-pdf is called.
+|#
+
+#|
+Can make access more efficient to random pages by building a pagetree rather
+than just have a root PageTree node and all the Pages as direct children.
+How to we choose the optimal N-ary of the tree? Is binary optimal?
+
+->tree is naive
+|#
+
+(: ->tree : (Listof (Indirect Page)) Real -> (Indirect PageTree))
+(define (->tree pages n)
+  (define l (length pages))
+  (define-values (left right)
+    (split-at pages (ceiling (/ l 2))))
+  (if (< (length left) n)
+      (Indirect (pagetree (append left right)
+                          (cast l Positive-Integer)))
+      (Indirect (pagetree (list 
+                           (->tree left n)
+                           (->tree right n))
+                          (cast l Positive-Integer)))))
