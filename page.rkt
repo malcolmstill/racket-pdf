@@ -267,7 +267,7 @@ a lot of type defintions. TODO: work out how many permutations that would be.
                            #:vp Dictionary) PageTree))
 (define (pagetree kids
                   count
-                  #:parent [parent (PDFNull)]
+                  #:parent [parent (IndirectReference 0 0)]
                   #:last-modified [last-modified (PDFNull)]
                   #:resources [resources (PDFNull)]
                   #:media-box [media-box (PDFNull)]
@@ -343,15 +343,17 @@ How to we choose the optimal N-ary of the tree? Is binary optimal?
 ->tree is naive
 |#
 
-(: ->tree : (Listof (Indirect Page)) Real -> (Indirect PageTree))
-(define (->tree pages n)
+(: ->tree : (Listof (Indirect Page)) Real Boolean -> (Indirect PageTree))
+(define (->tree pages n root)
   (define l (length pages))
   (define-values (left right)
     (split-at pages (ceiling (/ l 2))))
   (if (< (length left) n)
       (Indirect (pagetree (append left right)
-                          (cast l Positive-Integer)))
+                          (cast l Positive-Integer)
+                          #:parent (if root (PDFNull) (IndirectReference 0 0))))
       (Indirect (pagetree (list 
-                           (->tree left n)
-                           (->tree right n))
-                          (cast l Positive-Integer)))))
+                           (->tree left n #f)
+                           (->tree right n #f))
+                          (cast l Positive-Integer)
+                          #:parent (if root (PDFNull) (IndirectReference 0 0))))))

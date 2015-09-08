@@ -40,16 +40,17 @@
                      (Indirect page2))
                     3))
 
-(: cat Catalog)
-(define cat (catalog (Indirect pages)))
-
 ;(display (compile-pdf cat)) (write-pdf (compile-pdf cat) "test.pdf")
 
 ;(display (compile-pdf (catalog (->tree (list (Indirect (page)) (Indirect (page)) (Indirect (page)) (Indirect (page))) 2))))
 
-(write-pdf (compile-pdf (catalog (->tree (list
-                                          (Indirect page3)
-                                          (Indirect page3)
-                                          (Indirect page3)
-                                          (Indirect page3)) 2)))
+(: cat Catalog)
+(define cat (catalog (->tree (list
+                              (Indirect page3)
+                              (Indirect page3)
+                              (Indirect page3)
+                              (Indirect page3)) 2 #t)))
+                     ;(Indirect pages)))
+(display (compile-pdf cat))
+(write-pdf (compile-pdf cat)
            "test.pdf")

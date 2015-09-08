@@ -29,28 +29,38 @@ onto object-list. In the future we may want to add an optimiser that makes
 objects indirect if they can be (increases the size of the PDF but speeds up
 access time?)
 |#
-(: resolve-indirect : PDFObject PDFObject -> PDFObject)
-(define (resolve-indirect obj parent)
+(: resolve-indirect : PDFObject IndirectReference PDFObject -> PDFObject)
+(define (resolve-indirect obj ir parent)
   (cond
-    [(or (Page? obj) (PageTree? obj)) (map (λ ([key-value : (Pairof Symbol PDFObject)])
-                                             (match key-value
-                                               [(cons 'Parent (IndirectReference _ _)) (cons 'Parent parent)]
-                                               [else (cons (car key-value) (resolve-indirect (cdr key-value) parent))])) obj)]
+    [(Page? obj) (map (λ ([key-value : (Pairof Symbol PDFObject)])
+                        (match key-value
+                          [(cons 'Parent (IndirectReference _ _)) (cons 'Parent parent)]
+                          [else (cons (car key-value) (resolve-indirect (cdr key-value) ir parent))])) obj)]
+    [(PageTree? obj) (map (λ ([key-value : (Pairof Symbol PDFObject)])
+                            (match key-value
+                              [(cons 'Parent (IndirectReference _ _)) (cons 'Parent parent)]
+                              [else (cons (car key-value) (resolve-indirect (cdr key-value) ir ir))])) obj)]
     [(Dictionary? obj) (map (λ ([key-value : (Pairof Symbol PDFObject)])
-                              (cons (car key-value) (resolve-indirect (cdr key-value) parent))) obj)]
+                              (cons (car key-value) (resolve-indirect (cdr key-value) ir parent))) obj)]
     [(Array? obj) (map (λ ([o : PDFObject])
-                           (resolve-indirect o parent)) obj)]
+                           (resolve-indirect o ir parent)) obj)]
     [(Indirect? obj) (begin
                           (set! object-count (+ object-count 1))
                           (let* ([obj-no object-count]
-                                 [ir (IndirectReference obj-no 0)])
+                                 [ir (IndirectReference obj-no 0)]) ; Make ir, an IndirectReference of the object held by Indirect
                             (cond
-                              [(or (Page? (Indirect-object obj)) (PageTree? (Indirect-object obj)))
+                              ; If the indirect object takes a parent we pass in the parent of the (Indirect ...)
+                              [(Page? (Indirect-object obj)) 
                                (set! object-list
-                                     (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj) parent))
+                                     (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj) ir parent))
                                            object-list))]
+                              [(and (IndirectReference? parent) (PageTree? (Indirect-object obj)))
+                               (set! object-list
+                                     (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj) ir parent))
+                                           object-list))]
+                              ; Otherwise 
                               [else (set! object-list
-                                     (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj) ir))
+                                     (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj) ir parent))
                                            object-list))])
                             ir))]
     [else obj]))
@@ -75,7 +85,7 @@ compile-pdf. This is where all our hard work gets rewarded.
 (define (compile-pdf cat)
   (set! object-list '())
   (set! object-count 0)
-  (define root (resolve-indirect (Indirect cat) (PDFNull)))
+  (define root (resolve-indirect (Indirect cat) (IndirectReference 0 0) (PDFNull)))
   ;(define obj-map (object-map (ann (hash) (HashTable Nonnegative-Integer Integer)) object-list))
   
   (define heading (pdf-heading 1 7))
