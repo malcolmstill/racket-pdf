@@ -45,24 +45,13 @@ access time?)
     [(Array? obj) (map (λ ([o : PDFObject])
                            (resolve-indirect o ir parent)) obj)]
     [(Indirect? obj) (begin
-                          (set! object-count (+ object-count 1))
-                          (let* ([obj-no object-count]
-                                 [ir (IndirectReference obj-no 0)]) ; Make ir, an IndirectReference of the object held by Indirect
-                            (cond
-                              ; If the indirect object takes a parent we pass in the parent of the (Indirect ...)
-                              [(Page? (Indirect-object obj)) 
-                               (set! object-list
-                                     (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj) ir parent))
-                                           object-list))]
-                              [(and (IndirectReference? parent) (PageTree? (Indirect-object obj)))
-                               (set! object-list
-                                     (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj) ir parent))
-                                           object-list))]
-                              ; Otherwise 
-                              [else (set! object-list
-                                     (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj) ir parent))
-                                           object-list))])
-                            ir))]
+                       (set! object-count (+ object-count 1))
+                       (let* ([obj-no object-count]
+                              [ir (IndirectReference obj-no 0)]) ; Make ir, an IndirectReference of the object held by Indirect
+                         (set! object-list
+                               (cons (IndirectObject obj-no 0 (resolve-indirect (Indirect-object obj) ir parent))
+                                     object-list))
+                         ir))]
     [else obj]))
 
 #|
